@@ -81,10 +81,8 @@ def check_RM(name, commit):
     if path.exists():
         with open(str(path)) as f:
             data = json.load(f)
-    print("before append", data)
     if data and data["commits"] and len(data["commits"][0]["refactorings"])>0:
         data["detected"] = True
-    print("after  append", data)
     return jsonify(data)
 
 def get_dropdown_items():

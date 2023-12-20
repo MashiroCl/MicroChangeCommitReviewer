@@ -85,16 +85,28 @@
                     var goodExample = createInput("goodExample", obj.previous.goodExample);
                     form.appendChild(goodExample);
 
-                    var RMDetect = createInput("RM", obj.previous.refactoringminer);
-                    if(!obj.previous.refactoringminer){
-                        if(obj.refactoringminer["detected"]===true){
-                            RMDetect.value = "Detected";
-                        }
-                        else{
-                            RMDetect.value = "Not detected";
-                        }
-                    }                    
-                    form.appendChild(RMDetect);
+                    
+                    var refDetected = null;
+                    fetch(`/repo/${repo}/RM/${commitID}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            refDetected = data["commits"][0]["refactorings"];
+                            var RMDetect = createInput("RM", obj.previous.refactoringminer);
+                            if(!obj.previous.refactoringminer){
+                                if(refDetected.length>0){
+                                    RMDetect.value = refDetected.map(item => item["type"]);
+                                }
+                                else{
+                                    RMDetect.value = "Not detected";
+                                }
+                            }    
+                            form.appendChild(RMDetect);
+                        })
+                        .catch(error => {
+                        console.error("Error fetching RM detection status:", error);
+                    });
+                
+                    
 
                     var submitButton = document.createElement("button");
                     submitButton.type = "submit";
@@ -170,16 +182,7 @@
             input.type ="text";
             input.placeholder = "new micro-change type";
             input.style.display = "none";
-            // var addButton = document.createElement("button");
-            // addButton.textContent = "Add";
-            // addButton.style.display = "none";
             var newDropDown = null;
-            // addButton.onclick = function() {
-            //     // Handle the click event for the "Add" button
-            //     var newOption = input.value;
-            //     saveNewItem();
-            //     console.log(`Adding new option: ${newOption}`);
-            // };
             return input;
         }
 
