@@ -87,11 +87,12 @@
 
                     
                     var refDetected = null;
+                    var RMDetect;
                     fetch(`/repo/${repo}/RM/${commitID}`)
                         .then(response => response.json())
                         .then(data => {
                             refDetected = data["commits"][0]["refactorings"];
-                            var RMDetect = createInput("RM", obj.previous.refactoringminer);
+                            RMDetect = createInput("RM", obj.previous.refactoringminer);
                             if(!obj.previous.refactoringminer){
                                 if(refDetected.length>0){
                                     RMDetect.value = refDetected.map(item => item["type"]);
