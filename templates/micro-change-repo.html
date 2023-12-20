@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>{{name}}</title>
+    <style>
+        #newItemInput {
+          display: none;
+          margin-top: 10px;
+        }
+      </style>
+</head>
+<body>
+    <script>
+        var repo = "{{name}}";
+        fetch(`/repo/${repo}/show`)
+            .then(response => response.json())
+            .then(data => {
+                data.forEach(obj => {
+                    // Create a container for each object
+                    var container = document.createElement("div");
+
+                    var commitID = obj.commitID;
+                    var message = obj.message;
+                    var link = obj.link;
+                    var changeStatus = obj.change_status;
+                    var RM = obj.refactoringminer;
+
+                    // Display the attributes on the page
+                    var messageElement = document.createElement("p");
+                    messageElement.textContent = `Message: ${message}`;
+                    container.appendChild(messageElement);
+
+                    var gitLink = document.createElement("a");
+                    gitLink.href = `${link}`;
+                    gitLink.textContent = `Diff: ${link}`;
+                    container.appendChild(gitLink);
+
+                    var changeStatusElement = document.createElement("p");
+                    changeStatusElement.textContent = `Change Status: ${changeStatus}`;
+                    container.appendChild(changeStatusElement);
+
+                    var RMlink = document.createElement("a");
+                    RMlink.href = `/repo/${repo}/RM/${RM}`;
+                    RMlink.textContent = `RM: ${RM}`;
+                    container.appendChild(RMlink);
+
+
+                    // Create form and button
+                    var form = document.createElement("form");
+                    // var input1 = createInput("Name", obj.name);
+                    var dropDownContainer = document.createElement("div");
+                    // Create a label for the dropdown
+                    var label = document.createElement("label");
+                    label.textContent = `Dropdown for micro-change types, choose "other" to add new one`;
+                    var otherInput = createNewTypeInput();
+                    var microChangeType = createDropdown(otherInput);
+                    dropDownContainer.appendChild(label);
+                    dropDownContainer.appendChild(microChangeType);
+                    dropDownContainer.appendChild(otherInput);
+                    form.appendChild(dropDownContainer);
+
+
+                    var microChangeIntent = createInput("Intent", obj.previous.intent);
+                    form.appendChild(microChangeIntent);
+
+                    var motivation = createInput("Motivation", obj.previous.motivation);
+                    form.appendChild(motivation);
+
+                    // var refactoringminer = createInput("Refactoringminer", obj.previous.refactoringminer);
+                    // form.appendChild(refactoringminer);
+
+                    var microChangeStructure = createInput("Structure", obj.previous.structure);
+                    form.appendChild(microChangeStructure);
+
+                    var alsoKnownAs = createInput("alsoKnownAs", obj.previous.alsoKnownAs);
+                    form.appendChild(alsoKnownAs);
+
+                    var howToDetect = createInput("howToDetect", obj.previous.howToDetect);
+                    form.appendChild(howToDetect);
+
+                    var behaviourChange = createInput("behaviourChange", obj.previous.behaviourChange);
+                    form.appendChild(behaviourChange);
+
+                    var goodExample = createInput("goodExample", obj.previous.goodExample);
+                    form.appendChild(goodExample);
+
+                    var RMDetect = createInput("RM", obj.previous.refactoringminer);
+                    if(!obj.previous.refactoringminer){
+                        if(obj.refactoringminer["detected"]===true){
+                            RMDetect.value = "Detected";
+                        }
+                        else{
+                            RMDetect.value = "Not detected";
+                        }
+                    }                    
+                    form.appendChild(RMDetect);
+
+                    var submitButton = document.createElement("button");
+                    submitButton.type = "submit";
+                    submitButton.textContent = "Submit";
+                    form.appendChild(submitButton);
+
+                    // Add event listener to form submit button
+                    form.addEventListener("submit", function(event) {
+                        event.preventDefault(); // Prevent form submission
+                        var microChangeName = null;
+                        if(otherInput.value){
+                            microChangeName = otherInput.value;
+                            saveNewItem(otherInput);
+                        }
+                        else{
+                            microChangeName = microChangeType.value;
+                        }
+                        // Create payload object
+                        var payload = {
+                            commitID: commitID,
+                            name: microChangeName,
+                            intent: microChangeIntent.value,
+                            motivation: motivation.value,
+                            structure: microChangeStructure.value,
+                            refactoringminer: RMDetect.value,
+                            behaviourChange: behaviourChange.value,
+                            goodExample: goodExample.value,
+                            alsoKnownAs: alsoKnownAs.value,
+                            howToDetect: howToDetect.value
+                        };
+
+                        // Send data to backend
+                        fetch(`/repo/${repo}/record`, {
+                            method: "POST",
+                            headers: {
+                                "Content-Type": "application/json"
+                            },
+                            body: JSON.stringify(payload)
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            // Handle response from backend
+                            console.log(data);
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                        });
+                    });
+
+                    container.appendChild(form);
+
+                    // Append the container to the body
+                    document.body.appendChild(container);
+                });
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+    
+        function createInput(inputName, existData){
+            var input = document.createElement("input");
+            input.type = "text";
+            input.placeholder = inputName;
+            if(existData){
+                input.value = existData;
+            }
+            return input;
+        }
+
+        function createNewTypeInput(){
+            // show an input and a button if the dropdown is selected the "other" option
+            var input = document.createElement("input");
+            input.type ="text";
+            input.placeholder = "new micro-change type";
+            input.style.display = "none";
+            // var addButton = document.createElement("button");
+            // addButton.textContent = "Add";
+            // addButton.style.display = "none";
+            var newDropDown = null;
+            // addButton.onclick = function() {
+            //     // Handle the click event for the "Add" button
+            //     var newOption = input.value;
+            //     saveNewItem();
+            //     console.log(`Adding new option: ${newOption}`);
+            // };
+            return input;
+        }
+
+        function loadMicroChangeTypes(){
+            fetch('/get_micro_change_types')
+                .then(response => response.json())
+                .then(data => {
+                localStorage.setItem('data', JSON.stringify(data));
+                })
+                .catch(error => console.error('Error fetching dropdown items:', error));
+        }
+
+        function checkNewOption(dropdown) {
+            var newItemInput = document.getElementById("newItemInput");
+
+            if (dropdown.value === "other") {
+            newItemInput.style.display = "block";
+            } else {
+            newItemInput.style.display = "none";
+            }
+        }
+
+        function saveNewItem(newInput) {
+            // Retrieve existing items from localStorage
+            var existingItems = JSON.parse(localStorage.getItem("data")) || [];
+
+            // Add the new item to the list
+            existingItems.push(newInput.value);
+
+            // Save the updated list back to localStorage
+            localStorage.setItem("data", JSON.stringify(existingItems));
+
+            // Send the data to the Flask backend
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', '/save_micro_change_types', true);
+            xhr.setRequestHeader('Content-Type', 'application/json');
+
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState == 4) {
+                    if (xhr.status == 200) {
+                        console.log('Data saved successfully!');
+                    } else {
+                        console.error('Failed to save data. Status:', xhr.status);
+                    }
+                }
+            };
+
+            // Send the data to the Flask backend
+            xhr.send(JSON.stringify({ data: existingItems }));
+
+            // Reset the input and refresh the dropdown with the updated list
+            newInput.value = "";
+            return createDropdown(newInput);
+        }
+        function createDropdown(otherInput){
+            var dropdown = document.createElement("select");
+            loadMicroChangeTypes();
+            var existingItems = JSON.parse(localStorage.getItem("data")) || [];
+            // load the existed selection data
+            dropdown.innerHTML = "";
+
+            // Add existing items to the dropdown
+            existingItems.forEach(function(item) {
+            var option = document.createElement("option");
+            option.value = item;
+            option.text = item;
+            dropdown.add(option);
+            });
+
+                // Add the "Other" option
+            var otherOption = document.createElement("option");
+            otherOption.value = "other";
+            otherOption.text = "Other";
+            dropdown.add(otherOption);
+            dropdown.addEventListener("change", function() {
+                console.log(dropdown.value);
+                // Show/hide the input and button based on the dropdown value
+                if (dropdown.value === "other") {
+                    otherInput.style.display = "block";
+                    // addButton.style.display = "block";
+                } else {
+                    otherInput.style.display = "none";
+                    // addButton.style.display = "none";
+                }
+            });
+            return dropdown;
+        }
+
+    </script>
+    <!-- Content goes here -->
+</body>
+</html>
