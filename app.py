@@ -3,13 +3,13 @@ import pathlib
 import json
 from mircochange import MicroChangeCommit
 
-app = Flask(__name__)
+app = Flask(__name__, static_url_path="/static")
 
 LocalRepositoryPath = "/Users/leichen/project/semantic_lifter/SemanticLifter/micro-change-reviewer/data"
 
 @app.route('/')
-def hello():
-    return render_template('micro-change-repo-list.html')
+def repo_list():
+    return render_template('repo-list.html')
 
 
 @app.route('/getRepos', methods=['GET'])
@@ -21,7 +21,7 @@ def get_repos_list():
 
 @app.route('/repo/<name>', methods=['GET'])
 def repo_page(name):
-    return render_template('micro-change-repo.html', name=name)
+    return render_template('micro-changes.html', name=name)
 
 
 def load_repo_data(name, commitID):
@@ -66,11 +66,12 @@ def show_repo(name):
 
 @app.route('/repo/<name>/record', methods=['POST'])
 def record_repo(name):
+    print("recording")
     path = pathlib.Path(f"./record/{name}")
     path.mkdir(exist_ok=True)
     data = request.get_json()
+    print("data",data)
     micro_change_commit = MicroChangeCommit(data)
-
     micro_change_commit.dump(str(path.joinpath(micro_change_commit.commitID+".json")))
     return jsonify({"message": "Recorded successfully"}) 
 
