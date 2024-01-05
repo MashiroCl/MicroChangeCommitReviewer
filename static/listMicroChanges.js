@@ -22,12 +22,12 @@ function createForm(obj) {
     var dropDownContainer = document.createElement("div");
     // Create a label for the dropdown
     var label = document.createElement("label");
-    label.textContent = `Dropdown for micro-change types, choose "other" to add new one`;
+    label.textContent = `\tDropdown for micro-change types, choose "other" to add new one`;
     var otherInput = createNewTypeInput();
     var microChangeType = createDropdown(otherInput, obj.previous.name);
-    dropDownContainer.appendChild(label);
     dropDownContainer.appendChild(microChangeType);
     dropDownContainer.appendChild(otherInput);
+    dropDownContainer.appendChild(label);
     form.appendChild(dropDownContainer);
 
 
@@ -53,10 +53,12 @@ function createForm(obj) {
     var goodExample = createInput("goodExample", obj.previous.goodExample);
     form.appendChild(goodExample);    
 
+    form.appendChild(document.createElement("br"));
     var submitButton = document.createElement("button");
     submitButton.type = "submit";
     submitButton.textContent = "Submit";
     form.appendChild(submitButton);
+    form.appendChild(document.createElement("br"));
 
 
     function getFormData(){
@@ -173,6 +175,10 @@ async function main(){
 
         for(const obj of data){
             const container = document.createElement("div");
+            container.className="commit-form";
+            container.style.border="solid 2px #000";
+            container.style.padding = "10px";
+            container.style.margin = "15px 15px";
 
             const commitID = obj.commitID;
             const message = obj.message;
