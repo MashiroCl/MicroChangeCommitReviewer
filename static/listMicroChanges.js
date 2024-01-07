@@ -175,11 +175,10 @@ async function main(){
 
         for(const obj of data){
             const container = document.createElement("div");
-            container.className="commit-form";
+            container.className="commitForm";
             container.style.border="solid 2px #000";
             container.style.padding = "10px";
             container.style.margin = "15px 15px";
-
             const commitID = obj.commitID;
             const message = obj.message;
             const link = obj.link;
@@ -242,6 +241,7 @@ async function main(){
                     body: JSON.stringify(payload)
                 })
                 .then(response => response.json())
+                .then(alert(`${commitID} Submitted`))
                 .catch(error => {
                     console.error('Error:', error);
                 });
