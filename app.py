@@ -11,12 +11,32 @@ LocalRepositoryPath = "/Users/leichen/project/semantic_lifter/SemanticLifter/mic
 def repo_list():
     return render_template('repo-list.html')
 
-
 @app.route('/getRepos', methods=['GET'])
 def get_repos_list():
-    path = pathlib.Path("./data/")
-    folders = [folder.name for folder in path.iterdir() if folder.is_dir()]
-    return jsonify(folders)
+    def load_toBeAnnoatated_size(path, name):
+        with open(path.joinpath(name, "withinmethod_refactor_commits.json")) as f:
+            data = json.load(f)
+            return len(data)
+    response = {}
+
+    repo_path = pathlib.Path("./data/")
+    repo_names = [folder.name for folder in repo_path.iterdir() if folder.is_dir()]
+    for repo_name in repo_names:
+        response[repo_name] = {}
+        response[repo_name]["toBeAnnotated"] = load_toBeAnnoatated_size(repo_path, repo_name)
+
+    progress_path = pathlib.Path("./record/")
+    progress_data = load_progress(progress_path)
+    for repo_name in repo_names:
+        response[repo_name]["annotated"] = len(progress_data.get(repo_name, []))
+
+    return jsonify(response)
+
+def load_progress(progress_path):
+    with open(f"{progress_path}/progress.json", "r") as f:
+        data = json.load(f)
+    return data
+
 
 
 @app.route('/repo/<name>', methods=['GET'])
@@ -73,7 +93,25 @@ def record_repo(name):
     print("data",data)
     micro_change_commit = MicroChangeCommit(data)
     micro_change_commit.dump(str(path.joinpath(micro_change_commit.commitID+".json")))
+
+    record_progress(name, micro_change_commit.commitID)
+
     return jsonify({"message": "Recorded successfully"}) 
+
+def record_progress(name, commitID):
+    path = pathlib.Path(f"./record/progress.json")
+    if path.exists():
+        with open(str(path),"r") as f:
+            progress_data = json.load(f)
+    else:
+        progress_data = {}
+    
+    if name not in progress_data.keys():
+        progress_data[name] = []
+    progress_data[name].append(commitID)
+    
+    with open(str(path),"w") as f:
+        json.dump(progress_data, f)
 
 @app.route('/repo/<name>/RM/<commit>', methods=['GET'])
 def check_RM(name, commit):
@@ -107,6 +145,7 @@ def save_data():
         return jsonify({'message': 'Data saved successfully'}), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0')
